@@ -3,45 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Mapa de Servicios</title>
+    <title>Villa Unión Digital - Modo Oscuro</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
-        * { font-family: 'Poppins', sans-serif; }
-        body { margin: 0; padding: 0; background: #f4f4f4; }
+        * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #111; overflow: hidden; }
         #map { height: 100vh; width: 100vw; z-index: 1; }
         
-        /* Buscador Superior */
+        /* Encabezado Estilo Dark */
+        .header-app {
+            position: absolute; top: 0; width: 100%; padding: 15px;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
+            z-index: 1001; text-align: center; border-bottom: 1px solid #333;
+        }
+        .header-app h1 { margin: 0; font-size: 18px; color: #fff; letter-spacing: 2px; font-weight: 600; }
+
+        /* Buscador */
         .search-container {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 85%; max-width: 400px;
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 90%; max-width: 400px;
         }
         #buscador {
-            width: 100%; padding: 12px 20px; border-radius: 25px; border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-size: 14px; outline: none;
+            width: 100%; padding: 12px 20px; border-radius: 12px; border: 1px solid #444;
+            background: rgba(30, 30, 30, 0.9); color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 14px; outline: none;
         }
+        #buscador::placeholder { color: #888; }
 
-        /* Botón GPS Flotante */
+        /* Botón GPS */
         .btn-gps {
             position: absolute; bottom: 30px; right: 20px; z-index: 1000;
             background: #007bff; color: white; width: 55px; height: 55px; border-radius: 50%;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer; 
             display: flex; align-items: center; justify-content: center;
-            font-size: 24px; border: 2px solid white; transition: 0.3s;
+            font-size: 24px; border: 2px solid #fff; transition: 0.3s;
         }
-        .btn-gps:active { transform: scale(0.9); }
+        .btn-gps:active { transform: scale(0.9); background: #0056b3; }
 
-        /* Estilo de los Popups */
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 5px; }
-        .leaflet-popup-content b { font-size: 16px; color: #007bff; }
+        /* Ajustes de Popups para modo oscuro */
+        .leaflet-popup-content-wrapper { background: #222; color: #fff; border-radius: 10px; }
+        .leaflet-popup-tip { background: #222; }
     </style>
 </head>
 <body>
 
+    <div class="header-app">
+        <h1>VILLA UNIÓN DIGITAL</h1>
+    </div>
+
     <div class="search-container">
-        <input type="text" id="buscador" placeholder="🔍 Buscar puesto o lugar..." onkeyup="filtrarPuestos()">
+        <input type="text" id="buscador" placeholder="🔍 Buscar lugar o servicio..." onkeyup="filtrarPuestos()">
     </div>
 
     <div id="map"></div>
@@ -50,65 +65,59 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // 1. Inicializar Mapa
-        var map = L.map('map', { zoomControl: false }).setView([18.8536, -96.9813], 16);
+        // 1. Inicializar Mapa con ROTACIÓN
+        var map = L.map('map', { 
+            zoomControl: false,
+            rotate: true,
+            touchRotate: true,
+            rotateControl: false,
+            bearing: 0 
+        }).setView([18.8536, -96.9813], 16);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© Villa Unión Digital'
+        // 2. Aplicar el estilo Mandíbula.Matriz (CartoDB DarkMatter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© Villa Unión | CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 20
         }).addTo(map);
 
-        // 2. Definir Iconos Personalizados
-        var IconoComida = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2819/2819194.png', iconSize: [35, 35] });
-        var IconoSalud = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2966/2966327.png', iconSize: [35, 35] });
-        var IconoDeporte = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4433/4433714.png', iconSize: [35, 35] });
+        // 3. Iconos (Aumentamos un poco el brillo visual)
+        var IconoComida = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2819/2819194.png', iconSize: [38, 38] });
+        var IconoSalud = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2966/2966327.png', iconSize: [38, 38] });
+        var IconoDeporte = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4433/4433714.png', iconSize: [38, 38] });
         var IconoDefault = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [30, 30] });
 
-        // 3. Base de Datos de Puestos
         var puestos = [
-            { nombre: "Campo Deportivo Villa Unión", lat: 18.8497, lng: -96.9822, info: "Espacio recreativo, canchas y eventos.", cat: "deporte" },
-            { nombre: "Centro de Salud Villa Union", lat: 18.8488, lng: -96.9814, info: "Atención médica preventiva de primer nivel.", cat: "salud" },
+            { nombre: "Campo Deportivo Villa Unión", lat: 18.8497, lng: -96.9822, info: "Espacio recreativo y canchas.", cat: "deporte" },
+            { nombre: "Centro de Salud Villa Union", lat: 18.8488, lng: -96.9814, info: "Atención médica preventiva.", cat: "salud" },
             { nombre: "Taquitos Villa Unión", lat: 18.8570, lng: -96.9831, info: "Cenas tradicionales los fines de semana.", cat: "comida" }
         ];
 
         var marcadores = [];
 
-        // 4. Función para crear marcadores con iconos según categoría
         puestos.forEach(function(p) {
-            var miIcono;
-            if(p.cat == "comida") miIcono = IconoComida;
-            else if(p.cat == "salud") miIcono = IconoSalud;
-            else if(p.cat == "deporte") miIcono = IconoDeporte;
-            else miIcono = IconoDefault;
-
+            var miIcono = p.cat == "comida" ? IconoComida : p.cat == "salud" ? IconoSalud : p.cat == "deporte" ? IconoDeporte : IconoDefault;
             var m = L.marker([p.lat, p.lng], { icon: miIcono }).addTo(map)
-                     .bindPopup("<b>" + p.nombre + "</b><br>" + p.info);
-            
-            m.nombrePuesto = p.nombre.toLowerCase(); // Para el buscador
+                     .bindPopup("<div style='text-align:center'><b>" + p.nombre + "</b><br>" + p.info + "</div>");
+            m.nombrePuesto = p.nombre.toLowerCase();
             marcadores.push(m);
         });
 
-        // 5. Función del Buscador
         function filtrarPuestos() {
             var filtro = document.getElementById('buscador').value.toLowerCase();
             marcadores.forEach(function(m) {
-                if(m.nombrePuesto.indexOf(filtro) > -1) {
-                    map.addLayer(m);
-                } else {
-                    map.removeLayer(m);
-                }
+                if(m.nombrePuesto.indexOf(filtro) > -1) map.addLayer(m);
+                else map.removeLayer(m);
             });
         }
 
-        // 6. GPS - Modo Profesional
+        // 4. GPS
         var marcadorUsuario = L.circleMarker([0,0], {
-            radius: 9, fillColor: "#007bff", color: "white", weight: 3, opacity: 1, fillOpacity: 1
+            radius: 10, fillColor: "#00c3ff", color: "white", weight: 3, opacity: 1, fillOpacity: 1
         }).addTo(map);
 
-        map.on('locationfound', function(e) {
-            marcadorUsuario.setLatLng(e.latlng);
-        });
-
-        setInterval(() => { map.locate({setView: false}); }, 5000);
+        map.on('locationfound', (e) => marcadorUsuario.setLatLng(e.latlng));
+        setInterval(() => map.locate({setView: false}), 5000);
         map.locate({setView: false});
 
         function centrarMapa() {
