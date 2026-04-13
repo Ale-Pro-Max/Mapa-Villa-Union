@@ -27,7 +27,7 @@
     <script>
         // 1. Inicializar el mapa (centrado en una coordenada general)
         // Puedes cambiar [18.894, -96.935] por las coordenadas de tu pueblo
-        var map = L.map('map').setView([18.8536, -96.9813], 16);
+        var map = L.map('map').setView([18.8536, -96.9813], 18);
 
         // 2. Cargar la capa del mapa (OpenStreetMap)
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -48,19 +48,24 @@
                 .bindPopup("<b>" + p.nombre + "</b><br>" + p.info);
         });
 
-        // 5. Función para seguir al usuario (GPS)
-        map.locate({setView: true, watch: true, maxZoom: 18});
+// 5. Configuración del GPS
+var marcadorUsuario = L.circle([0,0], {radius: 5}).addTo(map);
 
-        function onLocationFound(e) {
-            var radius = e.accuracy / 2;
-            L.circle(e.latlng, radius).addTo(map); // Círculo azul de precisión
-        }
+function onLocationFound(e) {
+    // Actualiza la posición del punto azul sin mover la cámara automáticamente
+    marcadorUsuario.setLatLng(e.latlng);
+    marcadorUsuario.setRadius(e.accuracy / 2);
+}
 
-        map.on('locationfound', onLocationFound);
+map.on('locationfound', onLocationFound);
 
-        function centrarMapa() {
-            map.locate({setView: true});
-        }
+// Esto busca tu ubicación cada 5 segundos pero NO mueve el mapa
+map.locate({watch: true, enableHighAccuracy: true});
+
+// Esta función es la que SÍ mueve la cámara cuando tocas el botón
+function centrarMapa() {
+    map.locate({setView: true, maxZoom: 18});
+}
     </script>
 </body>
 </html>
