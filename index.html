@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Mapa de Puestos - Mi Pueblito</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+        .btn-gps {
+            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
+            background: white; padding: 10px; border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5); cursor: pointer; font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+    <div class="btn-gps" onclick="centrarMapa()">📍</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Inicializar el mapa (centrado en una coordenada general)
+        // Puedes cambiar [18.894, -96.935] por las coordenadas de tu pueblo
+        var map = L.map('map').setView([18.894, -96.935], 16);
+
+        // 2. Cargar la capa del mapa (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // 3. Tu lista de puestos (Aquí es donde irás añadiendo más)
+        var puestos = [
+            { nombre: "Antojitos Doña Mari", lat: 18.8945, lng: -96.9352, info: "Ricas picaditas" },
+            { nombre: "Artesanías El Centro", lat: 18.8960, lng: -96.9360, info: "Regalos y recuerdos" }
+        ];
+
+        // 4. Dibujar los puestos en el mapa
+        puestos.forEach(function(p) {
+            L.marker([p.lat, p.lng]).addTo(map)
+                .bindPopup("<b>" + p.nombre + "</b><br>" + p.info);
+        });
+
+        // 5. Función para seguir al usuario (GPS)
+        map.locate({setView: true, watch: true, maxZoom: 18});
+
+        function onLocationFound(e) {
+            var radius = e.accuracy / 2;
+            L.circle(e.latlng, radius).addTo(map); // Círculo azul de precisión
+        }
+
+        map.on('locationfound', onLocationFound);
+
+        function centrarMapa() {
+            map.locate({setView: true});
+        }
+    </script>
+</body>
+</html>
