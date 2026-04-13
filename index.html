@@ -3,126 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Modo Oscuro</title>
+    <title>Villa Unión Digital - Pro</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
-        * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
-        body { margin: 0; padding: 0; background: #111; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; z-index: 1; }
+        * { font-family: 'Roboto', sans-serif; box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #ebebeb; overflow: hidden; }
+        #map { height: 100vh; width: 100vw; }
         
-        /* Encabezado Estilo Dark */
-        .header-app {
-            position: absolute; top: 0; width: 100%; padding: 15px;
-            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px);
-            z-index: 1001; text-align: center; border-bottom: 1px solid #333;
+        /* Barra de búsqueda flotante estilo Google Maps */
+        .search-box {
+            position: absolute; top: 10px; left: 10px; right: 10px;
+            z-index: 10; max-width: 450px; margin: 0 auto;
+            display: flex; align-items: center;
+            background: white; padding: 5px 15px;
+            border-radius: 28px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
-        .header-app h1 { margin: 0; font-size: 18px; color: #fff; letter-spacing: 2px; font-weight: 600; }
+        .search-box input {
+            flex: 1; border: none; padding: 10px; font-size: 16px; outline: none;
+        }
+        .search-box i { color: #70757a; font-style: normal; }
 
-        /* Buscador */
-        .search-container {
-            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 90%; max-width: 400px;
+        /* Botones de acción flotantes */
+        .fab-container {
+            position: absolute; bottom: 30px; right: 15px;
+            display: flex; flex-direction: column; gap: 15px; z-index: 10;
         }
-        #buscador {
-            width: 100%; padding: 12px 20px; border-radius: 12px; border: 1px solid #444;
-            background: rgba(30, 30, 30, 0.9); color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 14px; outline: none;
-        }
-        #buscador::placeholder { color: #888; }
-
-        /* Botón GPS */
-        .btn-gps {
-            position: absolute; bottom: 30px; right: 20px; z-index: 1000;
-            background: #007bff; color: white; width: 55px; height: 55px; border-radius: 50%;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer; 
+        .btn-action {
+            background: white; border: none; width: 56px; height: 56px;
+            border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
             display: flex; align-items: center; justify-content: center;
-            font-size: 24px; border: 2px solid #fff; transition: 0.3s;
+            font-size: 24px; cursor: pointer; color: #1a73e8; transition: background 0.2s;
         }
-        .btn-gps:active { transform: scale(0.9); background: #0056b3; }
+        .btn-action:active { background: #f1f3f4; }
+        .btn-location { color: #1a73e8; }
 
-        /* Ajustes de Popups para modo oscuro */
-        .leaflet-popup-content-wrapper { background: #222; color: #fff; border-radius: 10px; }
-        .leaflet-popup-tip { background: #222; }
+        /* Estilo de los Marcadores (Puntos de interés) */
+        .custom-marker {
+            background-size: cover; width: 30px; height: 30px;
+            border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;
+        }
+
+        /* Popups limpios */
+        .maplibregl-popup-content {
+            border-radius: 12px !important; padding: 15px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+        }
     </style>
 </head>
 <body>
 
-    <div class="header-app">
-        <h1>VILLA UNIÓN DIGITAL</h1>
-    </div>
-
-    <div class="search-container">
-        <input type="text" id="buscador" placeholder="🔍 Buscar lugar o servicio..." onkeyup="filtrarPuestos()">
+    <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="buscador" placeholder="Buscar en Villa Unión..." onkeyup="filtrar()">
     </div>
 
     <div id="map"></div>
-    <button class="btn-gps" onclick="centrarMapa()">📍</button>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div class="fab-container">
+        <button class="btn-action" onclick="cambiarEstilo()" title="Cambiar Vista">🗺️</button>
+        <button class="btn-action btn-location" onclick="centrar()" title="Mi ubicación">🎯</button>
+    </div>
 
     <script>
-        // 1. Inicializar Mapa con ROTACIÓN
-        var map = L.map('map', { 
-            zoomControl: false,
-            rotate: true,
-            touchRotate: true,
-            rotateControl: false,
-            bearing: 0 
-        }).setView([18.8536, -96.9813], 16);
+        // Estilos disponibles
+        const estilos = {
+            oscuro: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            claro: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+        };
 
-        // 2. Aplicar el estilo Mandíbula.Matriz (CartoDB DarkMatter)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© Villa Unión | CartoDB',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(map);
-
-        // 3. Iconos (Aumentamos un poco el brillo visual)
-        var IconoComida = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2819/2819194.png', iconSize: [38, 38] });
-        var IconoSalud = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/2966/2966327.png', iconSize: [38, 38] });
-        var IconoDeporte = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/4433/4433714.png', iconSize: [38, 38] });
-        var IconoDefault = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [30, 30] });
-
-        var puestos = [
-            { nombre: "Campo Deportivo Villa Unión", lat: 18.8497, lng: -96.9822, info: "Espacio recreativo y canchas.", cat: "deporte" },
-            { nombre: "Centro de Salud Villa Union", lat: 18.8488, lng: -96.9814, info: "Atención médica preventiva.", cat: "salud" },
-            { nombre: "Taquitos Villa Unión", lat: 18.8570, lng: -96.9831, info: "Cenas tradicionales los fines de semana.", cat: "comida" }
-        ];
-
-        var marcadores = [];
-
-        puestos.forEach(function(p) {
-            var miIcono = p.cat == "comida" ? IconoComida : p.cat == "salud" ? IconoSalud : p.cat == "deporte" ? IconoDeporte : IconoDefault;
-            var m = L.marker([p.lat, p.lng], { icon: miIcono }).addTo(map)
-                     .bindPopup("<div style='text-align:center'><b>" + p.nombre + "</b><br>" + p.info + "</div>");
-            m.nombrePuesto = p.nombre.toLowerCase();
-            marcadores.push(m);
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: estilos.oscuro,
+            center: [-96.9813, 18.8536], 
+            zoom: 15.5,
+            pitch: 45, // Perspectiva 3D inicial
+            antialias: true
         });
 
-        function filtrarPuestos() {
-            var filtro = document.getElementById('buscador').value.toLowerCase();
-            marcadores.forEach(function(m) {
-                if(m.nombrePuesto.indexOf(filtro) > -1) map.addLayer(m);
-                else map.removeLayer(m);
+        // Datos de Villa Unión
+        const lugares = [
+            { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, desc: "Canchas de fútbol y recreación." },
+            { nombre: "Centro de Salud", lon: -96.9814, lat: 18.8488, desc: "Servicios médicos básicos." },
+            { nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, desc: "Los mejores tacos de la zona." }
+        ];
+
+        const markers = [];
+
+        // Añadir lugares al mapa
+        lugares.forEach(l => {
+            const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+                .setHTML(`<strong style="color:#1a73e8; font-size:16px;">${l.nombre}</strong><p style="margin:5px 0 0; color:#5f6368;">${l.desc}</p>`);
+
+            const el = document.createElement('div');
+            el.className = 'custom-marker';
+            el.style.backgroundColor = '#ea4335'; // Rojo estilo Google
+            el.innerHTML = '<div style="color:white; text-align:center; line-height:30px; font-size:12px;">📍</div>';
+
+            const m = new maplibregl.Marker(el)
+                .setLngLat([l.lon, l.lat])
+                .setPopup(popup)
+                .addTo(map);
+            
+            m.nombre = l.nombre.toLowerCase();
+            markers.push(m);
+        });
+
+        // Buscador reactivo
+        function filtrar() {
+            const val = document.getElementById('buscador').value.toLowerCase();
+            markers.forEach(m => {
+                m.getElement().style.display = m.nombre.includes(val) ? 'block' : 'none';
             });
         }
 
-        // 4. GPS
-        var marcadorUsuario = L.circleMarker([0,0], {
-            radius: 10, fillColor: "#00c3ff", color: "white", weight: 3, opacity: 1, fillOpacity: 1
-        }).addTo(map);
+        // GPS con "FlyTo" (Efecto suave)
+        let userMarker = new maplibregl.Marker({ color: '#4285F4' }) // Azul Google
+            .setLngLat([0,0])
+            .addTo(map);
 
-        map.on('locationfound', (e) => marcadorUsuario.setLatLng(e.latlng));
-        setInterval(() => map.locate({setView: false}), 5000);
-        map.locate({setView: false});
-
-        function centrarMapa() {
-            map.locate({setView: true, maxZoom: 17});
+        function centrar() {
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { longitude, latitude } = pos.coords;
+                map.flyTo({
+                    center: [longitude, latitude],
+                    zoom: 17,
+                    pitch: 50,
+                    essential: true,
+                    duration: 2000 // 2 segundos de vuelo
+                });
+                userMarker.setLngLat([longitude, latitude]);
+            }, err => alert("Por favor activa el GPS"), { enableHighAccuracy: true });
         }
+
+        // Cambiar entre modo claro y oscuro
+        let esOscuro = true;
+        function cambiarEstilo() {
+            esOscuro = !esOscuro;
+            map.setStyle(esOscuro ? estilos.oscuro : estilos.claro);
+        }
+
+        // Actualización de ubicación en segundo plano
+        setInterval(() => {
+            navigator.geolocation.getCurrentPosition(pos => {
+                userMarker.setLngLat([pos.coords.longitude, pos.coords.latitude]);
+            });
+        }, 5000);
     </script>
 </body>
 </html>
