@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa de Puestos - Mi Pueblito</title>
+    <title>Mapa de Puestos - Villa Unión</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -11,61 +11,81 @@
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100vw; }
         .btn-gps {
-            position: absolute; bottom: 20px; right: 20px; z-index: 1000;
-            background: white; padding: 10px; border-radius: 50%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5); cursor: pointer; font-size: 20px;
+            position: absolute; bottom: 30px; right: 20px; z-index: 1000;
+            background: white; width: 50px; height: 50px; border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3); cursor: pointer; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; border: none;
         }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
-    <div class="btn-gps" onclick="centrarMapa()">📍</div>
+    <button class="btn-gps" onclick="centrarMapa()" title="Mi ubicación">📍</button>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // 1. Inicializar el mapa (centrado en una coordenada general)
-        // Puedes cambiar [18.894, -96.935] por las coordenadas de tu pueblo
-        var map = L.map('map').setView([18.8536, -96.9813], 18);
+        // 1. Inicializar el mapa centrado en Villa Unión
+        var map = L.map('map', {
+            tap: false // Mejora el toque en algunos móviles
+        }).setView([18.8536, -96.9813], 16);
 
-        // 2. Cargar la capa del mapa (OpenStreetMap)
+        // 2. Cargar la capa del mapa
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 3. Tu lista de puestos (Aquí es donde irás añadiendo más)
+        // 3. Lista de puestos
         var puestos = [
-            { nombre: "Campo Deportivo Villa Unión", lat: 18.8497, lng: -96.9822, info: "El Campo Deportivo Villa Unión es un espacio recreativo que destaca por su cancha de fútbol de pasto natural. Es un punto de encuentro fundamental para la comunidad local, donde se desarrollan ligas de fútbol locales, entrenamientos y eventos sociales en un ambiente familiar rodeado de vegetación" },
-            { nombre: "Centro de Salud Villa Union", lat: 18.8488, lng: -96.9814, info: "El Centro de Salud Villa Unión es una unidad médica de primer nivel en Fortín, Veracruz, que ofrece servicios básicos como medicina general, vacunación y control prenatal. Inaugurado en su sede actual en 2019, funciona como el principal punto de atención sanitaria preventiva para la comunidad y zonas aledañas." },
-            { nombre: "Taquitos Villa Unión", lat: 18.8570, lng: -96.9831, info: "Taquitos Villa Unión es un establecimiento local de comida ubicado en la localidad de Villa Unión, Fortín. Se especializa en la venta de tacos y antojitos mexicanos, siendo un punto popular para cenar en la zona. El lugar destaca por su ambiente sencillo y tradicional, operando principalmente durante los fines de semana en horario nocturno." }
-
+            { nombre: "Campo Deportivo Villa Unión", lat: 18.8497, lng: -96.9822, info: "Espacio recreativo con cancha de pasto natural." },
+            { nombre: "Centro de Salud Villa Union", lat: 18.8488, lng: -96.9814, info: "Unidad médica de primer nivel. Inaugurado en 2019." },
+            { nombre: "Taquitos Villa Unión", lat: 18.8570, lng: -96.9831, info: "Tacos y antojitos tradicionales. Principalmente fines de semana." }
         ];
 
-        // 4. Dibujar los puestos en el mapa
+        // 4. Dibujar los marcadores
         puestos.forEach(function(p) {
             L.marker([p.lat, p.lng]).addTo(map)
                 .bindPopup("<b>" + p.nombre + "</b><br>" + p.info);
         });
 
-// 5. Configuración del GPS
-var marcadorUsuario = L.circle([0,0], {radius: 5}).addTo(map);
+        // 5. Lógica del GPS (MODO LIBRE)
+        
+        // Creamos el punto azul que representa al usuario
+        var marcadorUsuario = L.circleMarker([0,0], {
+            radius: 8,
+            fillColor: "#007bff",
+            color: "white",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(map);
 
-function onLocationFound(e) {
-    // Actualiza la posición del punto azul sin mover la cámara automáticamente
-    marcadorUsuario.setLatLng(e.latlng);
-    marcadorUsuario.setRadius(e.accuracy / 2);
-}
+        // Esta función SOLO actualiza la posición del punto azul, NO mueve la cámara
+        function actualizarPosicion(e) {
+            marcadorUsuario.setLatLng(e.latlng);
+        }
 
-map.on('locationfound', onLocationFound);
+        map.on('locationfound', actualizarPosicion);
 
-// Esto busca tu ubicación cada 5 segundos pero NO mueve el mapa
-map.locate({watch: true, enableHighAccuracy: true});
+        // Error por si el GPS está apagado
+        map.on('locationerror', function(e) {
+            console.log("No se pudo obtener la ubicación.");
+        });
 
-// Esta función es la que SÍ mueve la cámara cuando tocas el botón
-function centrarMapa() {
-    map.locate({setView: true, maxZoom: 18});
-}
+        // VIGILANCIA SILENCIOSA: Actualiza tu posición cada 5 segundos sin mover el mapa
+        setInterval(function() {
+            map.locate({setView: false, enableHighAccuracy: true});
+        }, 5000);
+
+        // Localización inicial al abrir la app (sin mover cámara si ya cargó)
+        map.locate({setView: false, enableHighAccuracy: true});
+
+        // LA ÚNICA FUNCIÓN QUE MUEVE EL MAPA (Al presionar el botón)
+        function centrarMapa() {
+            map.locate({setView: true, maxZoom: 17, enableHighAccuracy: true});
+        }
     </script>
 </body>
 </html>
