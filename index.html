@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Pro</title>
+    <title>Villa Unión Digital - Live Tracking</title>
     
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -19,7 +19,6 @@
         body { margin: 0; padding: 0; background: #ebebeb; overflow: hidden; }
         #map { height: 100vh; width: 100vw; }
         
-        /* Contenedor Superior (Buscador + Filtros) */
         .top-container {
             position: absolute; top: 10px; left: 0; right: 0;
             z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -35,24 +34,24 @@
             flex: 1; border: none; padding: 10px; font-size: 16px; outline: none;
         }
 
-        /* Hilera de Filtros */
         .filter-row {
             width: 100%; overflow-x: auto; white-space: nowrap;
             padding: 5px 15px; display: flex; gap: 8px;
-            scrollbar-width: none; /* Oculta scroll en Firefox */
+            scrollbar-width: none;
         }
-        .filter-row::-webkit-scrollbar { display: none; } /* Oculta scroll en Chrome/Safari */
+        .filter-row::-webkit-scrollbar { display: none; }
 
         .chip {
             background: white; border: 1px solid #dadce0;
             padding: 8px 16px; border-radius: 20px;
             font-size: 14px; font-weight: 500; color: #3c4043;
             cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .chip:active, .chip.active { background: #e8f0fe; color: #1967d2; border-color: #1967d2; }
+        /* Estilo especial para el botón "Todos" */
+        .chip-all { background: #1a73e8; color: white; border-color: #1a73e8; }
+        .chip:active { background: #f1f3f4; }
 
-        /* Botón GPS */
         .btn-location {
             position: absolute; bottom: 30px; right: 15px; z-index: 10;
             background: white; border: none; width: 56px; height: 56px;
@@ -69,7 +68,6 @@
 
         .maplibregl-popup-content {
             border-radius: 12px !important; padding: 15px !important;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
         }
     </style>
 </head>
@@ -82,13 +80,14 @@
         </div>
         
         <div class="filter-row" id="filter-row">
-            <!-- Los filtros se generan con JS para asegurar orden alfabético -->
+            <!-- Botón para ver todos -->
+            <div class="chip chip-all" onclick="mostrarTodos()">📍 Todos</div>
         </div>
     </div>
 
     <div id="map"></div>
 
-    <button class="btn-location" onclick="centrar()" title="Mi ubicación">🎯</button>
+    <button class="btn-location" onclick="centrar()" title="Centrar en mí">🎯</button>
 
     <script>
         const estilos = {
@@ -96,7 +95,6 @@
             claro: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
         };
 
-        // Lógica de horario automática
         const hora = new Date().getHours();
         const estiloInicial = (hora >= 19 || hora < 7) ? estilos.oscuro : estilos.claro;
 
@@ -109,11 +107,7 @@
             antialias: true
         });
 
-        // Categorías solicitadas (Ordenadas alfabéticamente)
-        const categorias = [
-            "Abarrotes", "Cafeterías", "Mascotas", "Papelerías", 
-            "Parques", "Restaurantes", "Salud"
-        ];
+        const categorias = ["Abarrotes", "Cafeterías", "Mascotas", "Papelerías", "Parques", "Restaurantes", "Salud"];
 
         const lugares = [
             { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, desc: "Canchas de fútbol y recreación.", cat: "Parques" },
@@ -123,7 +117,7 @@
 
         const markers = [];
 
-        // Generar Chips de Filtro
+        // Generar Chips
         const filterRow = document.getElementById('filter-row');
         categorias.forEach(cat => {
             const chip = document.createElement('div');
@@ -133,7 +127,6 @@
             filterRow.appendChild(chip);
         });
 
-        // Crear Marcadores
         lugares.forEach(l => {
             const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
                 .setHTML(`<strong style="color:#1a73e8; font-size:16px;">${l.nombre}</strong><p style="margin:5px 0 0; color:#5f6368;">${l.desc}</p>`);
@@ -143,17 +136,12 @@
             el.style.backgroundColor = '#ea4335';
             el.innerHTML = '<div style="color:white; text-align:center; line-height:30px; font-size:12px;">📍</div>';
 
-            const m = new maplibregl.Marker(el)
-                .setLngLat([l.lon, l.lat])
-                .setPopup(popup)
-                .addTo(map);
-            
+            const m = new maplibregl.Marker(el).setLngLat([l.lon, l.lat]).setPopup(popup).addTo(map);
             m.nombre = l.nombre.toLowerCase();
             m.categoria = l.cat;
             markers.push(m);
         });
 
-        // Filtrado por texto (Buscador)
         function filtrarTexto() {
             const val = document.getElementById('buscador').value.toLowerCase();
             markers.forEach(m => {
@@ -161,33 +149,42 @@
             });
         }
 
-        // Filtrado por categoría (Chips)
         function filtrarCategoria(cat) {
             markers.forEach(m => {
                 m.getElement().style.display = (m.categoria === cat) ? 'block' : 'none';
             });
         }
 
-        // GPS
+        function mostrarTodos() {
+            markers.forEach(m => m.getElement().style.display = 'block');
+            document.getElementById('buscador').value = "";
+        }
+
+        // --- LÓGICA DE SEGUIMIENTO EN TIEMPO REAL ---
         let userMarker = new maplibregl.Marker({ color: '#4285F4' })
             .setLngLat([0,0])
             .addTo(map);
 
-        function centrar() {
-            navigator.geolocation.getCurrentPosition(pos => {
+        // Esta función "vigila" la posición y se activa solita cada que te mueves
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition(pos => {
                 const { longitude, latitude } = pos.coords;
-                map.flyTo({ center: [longitude, latitude], zoom: 17, duration: 2000 });
-                userMarker.setLngLat([longitude, latitude]);
-            }, err => alert("Por favor activa el GPS"), { enableHighAccuracy: true });
+                userMarker.setLngLat([longitude, latitude]); // Mueve el punto azul contigo
+            }, err => console.log("Error de GPS"), { 
+                enableHighAccuracy: true,
+                maximumAge: 1000,
+                timeout: 5000
+            });
         }
 
-        // Actualización de posición GPS
-        setInterval(() => {
-            navigator.geolocation.getCurrentPosition(pos => {
-                userMarker.setLngLat([pos.coords.longitude, pos.coords.latitude]);
-            }, null, { enableHighAccuracy: true });
-        }, 5000);
-
+        function centrar() {
+            const pos = userMarker.getLngLat();
+            if (pos.lng !== 0) {
+                map.flyTo({ center: [pos.lng, pos.lat], zoom: 17, duration: 1500 });
+            } else {
+                alert("Esperando señal de GPS...");
+            }
+        }
     </script>
 </body>
 </html>
