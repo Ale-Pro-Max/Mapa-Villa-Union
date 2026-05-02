@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Live</title>
+    <title>Villa Unión Digital - Orientado</title>
     
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -11,7 +11,7 @@
     
     <style>
         * { font-family: 'Roboto', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background: #ebebeb; overflow: hidden; }
+        body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
         #map { height: 100vh; width: 100vw; }
         
         .top-container {
@@ -39,7 +39,6 @@
             cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.2s ease;
         }
-        .chip:active { background: #f1f3f4; }
 
         .btn-location {
             position: absolute; bottom: 30px; right: 15px; z-index: 10;
@@ -62,10 +61,7 @@
             <span>🔍</span>
             <input type="text" id="buscador" placeholder="Buscar negocio..." onkeyup="filtrarTexto()">
         </div>
-        
-        <div class="filter-row" id="filter-row">
-            <!-- Las categorías se insertan aquí vía JS -->
-        </div>
+        <div class="filter-row" id="filter-row"></div>
     </div>
 
     <div id="map"></div>
@@ -84,6 +80,7 @@
             center: [-96.9813, 18.8536], 
             zoom: 15.5,
             pitch: 45,
+            bearing: 180, // AJUSTADO PARA QUE SE VEA COMO LA IMAGEN 2
             antialias: true
         });
 
@@ -97,7 +94,6 @@
         const markers = [];
         const filterRow = document.getElementById('filter-row');
 
-        // 1. Generar categorías primero (Orden A-Z)
         categorias.forEach(cat => {
             const chip = document.createElement('div');
             chip.className = 'chip';
@@ -106,7 +102,6 @@
             filterRow.appendChild(chip);
         });
 
-        // 2. Agregar botón "Todos" al final, sin emoji y sin color especial
         const btnTodos = document.createElement('div');
         btnTodos.className = 'chip';
         btnTodos.innerText = 'Todos';
@@ -149,7 +144,7 @@
 
         function centrar() {
             const pos = userMarker.getLngLat();
-            if (pos.lng !== 0) map.flyTo({ center: [pos.lng, pos.lat], zoom: 17 });
+            if (pos.lng !== 0) map.flyTo({ center: [pos.lng, pos.lat], zoom: 17, bearing: 180 });
         }
     </script>
 </body>
