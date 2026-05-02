@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Pro</title>
+    <title>Villa Unión Digital</title>
     
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -11,7 +11,7 @@
     
     <style>
         * { font-family: 'Roboto', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; touch-action: manipulation; }
+        body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
         #map { height: 100vh; width: 100vw; z-index: 1; }
         
         /* Interfaz Superior */
@@ -36,21 +36,21 @@
         }
         .chip.active { background: #1a73e8; color: white; border-color: #1a73e8; }
 
-        /* Bottom Sheet - Z-INDEX ALTO PARA EVITAR CONFLICTOS */
+        /* Bottom Sheet Expandible */
         #bottom-sheet {
             position: fixed; bottom: -100%; left: 0; right: 0;
             background: white; border-radius: 20px 20px 0 0;
             z-index: 2000; transition: bottom 0.4s cubic-bezier(0, 0, 0.2, 1);
-            max-width: 600px; margin: 0 auto; height: 80vh; display: flex; flex-direction: column;
+            max-width: 600px; margin: 0 auto; height: 85vh; display: flex; flex-direction: column;
             box-shadow: 0 -5px 25px rgba(0,0,0,0.4);
         }
-        #bottom-sheet.peek { bottom: -50vh; } 
+        #bottom-sheet.peek { bottom: -55vh; } 
         #bottom-sheet.full { bottom: 0; }     
 
         .sheet-header { padding: 15px; cursor: pointer; text-align: center; border-bottom: 1px solid #eee; }
         .sheet-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 10px; margin: 0 auto; }
         
-        .sheet-content { padding: 20px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+        .sheet-content { padding: 20px; overflow-y: auto; flex: 1; }
         .place-title { font-size: 24px; font-weight: 700; color: #202124; margin-bottom: 4px; }
         .place-cat { color: #70757a; font-size: 14px; margin-bottom: 12px; }
         
@@ -74,8 +74,15 @@
             display: flex; align-items: center; justify-content: center; font-size: 24px; color: #1a73e8;
         }
 
-        .custom-marker { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); transform: rotate(-45deg); cursor: pointer; }
+        .custom-marker { width: 32px; height: 32px; border-radius: 50% 50% 50% 0; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4); transform: rotate(-45deg); cursor: pointer; z-index: 5; }
         .marker-inner { transform: rotate(45deg); display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 14px; }
+        
+        /* Modal Categorias */
+        #more-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 3000; align-items: center; justify-content: center;
+        }
+        .modal-content { background: white; width: 85%; max-width: 350px; border-radius: 20px; padding: 25px; }
     </style>
 </head>
 <body>
@@ -97,18 +104,21 @@
 
     <button class="btn-location" onclick="centrar()">🎯</button>
 
-    <!-- Pestaña de Detalles -->
     <div id="bottom-sheet">
         <div class="sheet-header" onclick="expandirSheet()">
             <div class="sheet-handle"></div>
         </div>
-        <div class="sheet-content" id="sheet-data">
-            <!-- Se llena al dar clic en un marcador -->
+        <div class="sheet-content" id="sheet-data"></div>
+    </div>
+
+    <div id="more-modal" onclick="this.style.display='none'">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0 0 20px 0">Más Categorías</h3>
+            <div id="lista-otros" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
     </div>
 
     <script>
-        // Configuración inicial del mapa
         const map = new maplibregl.Map({
             container: 'map',
             style: (new Date().getHours() >= 19 || new Date().getHours() < 7) ? 
@@ -117,7 +127,7 @@
             center: [-96.9813, 18.8536], 
             zoom: 16,
             pitch: 55,
-            bearing: 150, // Orientación solicitada
+            bearing: 160, // CAMBIADO A 160
             antialias: true
         });
 
@@ -125,29 +135,22 @@
             { 
                 nombre: "Campo Deportivo Villa Unión", lon: -96.9822, lat: 18.8497, cat: "parques",
                 horarios: { lunes: "06:00-22:00", martes: "06:00-22:00", miercoles: "06:00-22:00", jueves: "06:00-22:00", viernes: "06:00-22:00", sabado: "06:00-23:00", domingo: "06:00-22:00" },
-                tel: "No disponible", dir: "Calle del Campo S/N, Centro", redes: "Comité Deportivo",
-                fotos: ["https://images.unsplash.com/photo-1595113316349-9fa4eb24f884?w=400"],
-                desc: "Canchas de fútbol y zona recreativa principal del pueblo."
+                tel: "2710000000", dir: "Av. Principal S/N", redes: "@villaunion_dep", fotos: ["https://images.unsplash.com/photo-1595113316349-9fa4eb24f884?w=400"], desc: "Campo de fútbol y recreación."
             },
             { 
                 nombre: "Centro de Salud", lon: -96.9808, lat: 18.8497, cat: "salud",
                 horarios: { lunes: "08:00-16:00", martes: "08:00-16:00", miercoles: "08:00-16:00", jueves: "08:00-16:00", viernes: "08:00-16:00", sabado: "Cerrado", domingo: "Cerrado" },
-                tel: "271-123-4567", dir: "Av. Principal esq. Juárez", redes: "SSV",
-                fotos: ["https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400"],
-                desc: "Clínica de atención primaria y servicios de urgencia básicos."
+                tel: "2711234567", dir: "Calle Juárez esq. Aldama", redes: "Salud Ver", fotos: ["https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400"], desc: "Servicios médicos básicos."
             },
             { 
-                nombre: "Taquitos 'El Güero'", lon: -96.9831, lat: 18.8570, cat: "restaurantes",
+                nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, cat: "restaurantes",
                 horarios: { lunes: "18:00-00:00", martes: "18:00-00:00", miercoles: "18:00-00:00", jueves: "18:00-00:00", viernes: "18:00-01:30", sabado: "18:00-01:30", domingo: "17:00-23:00" },
-                tel: "271-987-6543", dir: "Calle Principal #45", redes: "fb/TaquitosElGuero",
-                fotos: ["https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"],
-                desc: "Los tacos más famosos de Villa Unión. Pastor, tripa y bistec."
+                tel: "2719876543", dir: "Entrada Principal km 1", redes: "fb.com/tacosVU", fotos: ["https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400"], desc: "Especialidad en pastor y tripa."
             }
         ];
 
         const markers = [];
 
-        // Función para renderizar los marcadores y manejar los clics
         lugares.forEach(l => {
             const el = document.createElement('div');
             el.className = 'custom-marker';
@@ -156,12 +159,12 @@
 
             const m = new maplibregl.Marker(el).setLngLat([l.lon, l.lat]).addTo(map);
             
-            // LA CORRECCIÓN: Evento de clic con stopPropagation
-            el.addEventListener('click', (e) => {
-                e.stopPropagation(); // Detiene el cierre automático al tocar el mapa
+            // LA CORRECCIÓN DE CLIC
+            el.onclick = (e) => {
+                e.stopPropagation();
                 abrirDetalles(l);
-                map.flyTo({ center: [l.lon, l.lat], zoom: 17.5, speed: 0.8 });
-            });
+                map.flyTo({ center: [l.lon, l.lat], zoom: 17.5 });
+            };
 
             m.nombre = l.nombre.toLowerCase();
             m.categoria = l.cat;
@@ -173,70 +176,55 @@
             const hoy = dias[new Date().getDay()];
             const h = horarios[hoy];
             if (!h || h === "Cerrado") return { texto: "Cerrado ahora", clase: "status-closed" };
-            
-            const [ini, fin] = h.split('-').map(t => {
-                const [hrs, min] = t.split(':').map(Number);
-                return hrs + (min/60);
-            });
+            const [ini, fin] = h.split('-').map(t => { const [hrs, min] = t.split(':').map(Number); return hrs + (min/60); });
             const ahora = new Date().getHours() + (new Date().getMinutes()/60);
             const cierra = (fin < ini) ? fin + 24 : fin;
-
             if (ahora >= ini && ahora < cierra) return { texto: `Abierto • Cierra ${h.split('-')[1]}`, clase: "status-open" };
             return { texto: `Cerrado • Abre ${h.split('-')[0]}`, clase: "status-closed" };
         }
 
         function abrirDetalles(l) {
             const estado = obtenerEstado(l.horarios);
-            const content = document.getElementById('sheet-data');
-            const sheet = document.getElementById('bottom-sheet');
-
-            content.innerHTML = `
+            document.getElementById('sheet-data').innerHTML = `
                 <div class="place-title">${l.nombre}</div>
                 <div class="place-cat">${l.cat.toUpperCase()} • Villa Unión</div>
-                <div class="${estado.clase}" style="font-size:16px;">${estado.texto}</div>
-                
+                <div class="${estado.clase}">${estado.texto}</div>
                 <div class="action-bar">
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}" target="_blank" class="action-btn">
-                        <div class="btn-icon">🚗</div>Cómo llegar
-                    </a>
-                    <div class="action-btn" onclick="compartir('${l.nombre}')">
-                        <div class="btn-icon">🔗</div>Compartir
-                    </div>
-                    <a href="tel:${l.tel}" class="action-btn">
-                        <div class="btn-icon">📞</div>Llamar
-                    </a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}" target="_blank" class="action-btn"><div class="btn-icon">🚗</div>Llegar</a>
+                    <div class="action-btn" onclick="compartir('${l.nombre}')"><div class="btn-icon">🔗</div>Enviar</div>
+                    <a href="tel:${l.tel}" class="action-btn"><div class="btn-icon">📞</div>Llamar</a>
                 </div>
-
                 <div class="section-title">Fotos</div>
-                <div class="photo-gallery">
-                    ${l.fotos.map(f => `<img src="${f}" onclick="window.open('${f}')">`).join('')}
-                    <div style="min-width:120px; height:160px; background:#f1f3f4; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#70757a; font-size:13px;">Ver más</div>
-                </div>
-
-                <div class="section-title">Información detallada</div>
-                <div class="info-row">📍 <span>${l.dir}</span></div>
-                <div class="info-row">⏰ <span>Horario de hoy: ${l.horarios[Object.keys(l.horarios)[new Date().getDay()]]}</span></div>
-                <div class="info-row">📱 <span>${l.redes}</span></div>
-                <div class="info-row">ℹ️ <span>${l.desc}</span></div>
+                <div class="photo-gallery">${l.fotos.map(f => `<img src="${f}">`).join('')}</div>
+                <div class="section-title">Detalles</div>
+                <div class="info-row">📍 ${l.dir}</div>
+                <div class="info-row">📱 ${l.redes}</div>
+                <div class="info-row">ℹ️ ${l.desc}</div>
             `;
-            
-            sheet.classList.remove('full');
-            sheet.classList.add('peek');
+            document.getElementById('bottom-sheet').className = 'peek';
         }
 
         function expandirSheet() {
-            document.getElementById('bottom-sheet').classList.toggle('full');
+            const s = document.getElementById('bottom-sheet');
+            s.classList.toggle('full');
         }
 
-        // Cerrar al tocar el mapa (pero no al tocar el marcador)
-        map.on('click', () => {
-            document.getElementById('bottom-sheet').classList.remove('peek', 'full');
-        });
+        // FUNCIONES DE FILTROS (LAS QUE HACÍAN FALTA)
+        function filtrarCategoria(cat, el) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            if (el) el.classList.add('active');
+            markers.forEach(m => {
+                m.getElement().style.display = (m.categoria === cat || cat === 'todos') ? 'block' : 'none';
+            });
+            document.getElementById('more-modal').style.display = 'none';
+        }
 
-        function centrar() {
-            navigator.geolocation.getCurrentPosition(p => {
-                map.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 17, pitch: 40 });
-            }, () => alert("Por favor activa el GPS"));
+        function abrirMas() {
+            const otros = ["Abarrotes", "Farmacias", "Talleres", "Escuelas"].sort();
+            document.getElementById('lista-otros').innerHTML = otros.map(o => 
+                `<div class="chip" onclick="filtrarCategoria('${o.toLowerCase()}', this)">${o}</div>`
+            ).join('');
+            document.getElementById('more-modal').style.display = 'flex';
         }
 
         function filtrarPorTexto() {
@@ -244,11 +232,17 @@
             markers.forEach(m => m.getElement().style.display = m.nombre.includes(v) ? 'block' : 'none');
         }
 
-        function compartir(n) {
-            if (navigator.share) {
-                navigator.share({ title: n, text: 'Encontrado en Villa Unión Digital', url: window.location.href });
-            }
+        function centrar() {
+            navigator.geolocation.getCurrentPosition(p => {
+                map.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 17 });
+            });
         }
+
+        function compartir(n) {
+            if (navigator.share) navigator.share({ title: n, url: window.location.href });
+        }
+
+        map.on('click', () => { document.getElementById('bottom-sheet').className = ''; });
     </script>
 </body>
 </html>
