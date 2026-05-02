@@ -1,177 +1,343 @@
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Villa Unión Digital - Botón Info</title>
+
+    <title>Villa Unión Digital - Pro</title>
+
     
+
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
     
+
     <style>
-        * { font-family: 'Roboto', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; z-index: 1; }
-        
-        /* Buscador */
-        .top-ui {
-            position: absolute; top: 15px; left: 0; right: 0;
-            z-index: 10; display: flex; justify-content: center;
+
+        * { 
+
+            font-family: 'Roboto', sans-serif; 
+
+            box-sizing: border-box; 
+
+            /* Evita el resaltado azul al tocar en móviles */
+
+            -webkit-tap-highlight-color: transparent; 
+
         }
+
+        
+
+        body { margin: 0; padding: 0; background: #ebebeb; overflow: hidden; }
+
+        #map { height: 100vh; width: 100vw; }
+
+        
+
+        /* Barra de búsqueda */
+
         .search-box {
-            width: 85%; max-width: 400px; background: white;
-            padding: 12px 20px; border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); border: none; font-size: 16px;
+
+            position: absolute; top: 10px; left: 10px; right: 10px;
+
+            z-index: 10; max-width: 450px; margin: 0 auto;
+
+            display: flex; align-items: center;
+
+            background: white; padding: 5px 15px;
+
+            border-radius: 28px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+
         }
 
-        /* Marcador con Botón */
-        .marker-container {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 5px 8px;
-            border-radius: 20px;
-            border: 2px solid #1a73e8;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
+        .search-box input {
+
+            flex: 1; border: none; padding: 10px; font-size: 16px; outline: none;
+
         }
-        .marker-emoji { font-size: 20px; margin-right: 5px; }
-        .info-btn {
-            background: #1a73e8;
-            color: white;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
+
+
+
+        /* Contenedor de botones */
+
+        .fab-container {
+
+            position: absolute; bottom: 30px; right: 15px;
+
+            display: flex; flex-direction: column; gap: 15px; z-index: 10;
+
+        }
+
+
+
+        /* Botones Estilo Google Maps - Sin recuadros azules */
+
+        .btn-action {
+
+            background: white; 
+
+            border: none; 
+
+            width: 56px; 
+
+            height: 56px;
+
+            border-radius: 50%; 
+
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+
+            display: flex; 
+
+            align-items: center; 
+
             justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
+
+            font-size: 24px; 
+
+            cursor: pointer; 
+
+            outline: none; /* Elimina el borde azul en PC */
+
+            user-select: none; /* Evita seleccionar el icono como texto */
+
+            transition: background 0.2s, transform 0.1s;
+
         }
 
-        /* Ventana de Datos (Bottom Sheet mejorada) */
-        #bottom-sheet {
-            position: fixed; bottom: -100%; left: 0; right: 0;
-            background: white; border-radius: 20px 20px 0 0;
-            z-index: 2000; transition: bottom 0.4s cubic-bezier(0, 0, 0.2, 1);
-            max-width: 500px; margin: 0 auto; padding: 20px;
-            box-shadow: 0 -5px 25px rgba(0,0,0,0.5);
-        }
-        #bottom-sheet.active { bottom: 0; }
-        .close-sheet { float: right; font-size: 24px; color: #999; cursor: pointer; }
-        
-        .place-title { font-size: 22px; font-weight: 700; color: #202124; margin-bottom: 5px; }
-        .action-btn {
-            display: block; width: 100%; background: #1a73e8; color: white;
-            text-align: center; padding: 12px; border-radius: 10px;
-            text-decoration: none; margin-top: 15px; font-weight: 500;
+
+
+        /* Efecto sutil al presionar, sin ser un recuadro */
+
+        .btn-action:active { 
+
+            background: #f1f3f4; 
+
+            transform: scale(0.95); 
+
         }
 
-        .btn-gps {
-            position: absolute; bottom: 30px; right: 20px; z-index: 10;
-            background: white; border: none; width: 55px; height: 55px;
-            border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            font-size: 24px; color: #1a73e8;
+
+
+        .btn-location { color: #1a73e8; }
+
+
+
+        .custom-marker {
+
+            width: 30px; height: 30px;
+
+            border-radius: 50%; border: 2px solid white;
+
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;
+
         }
-        
-        .user-dot { font-size: 30px; filter: drop-shadow(0 0 5px white); }
+
+
+
+        .maplibregl-popup-content {
+
+            border-radius: 12px !important; padding: 15px !important;
+
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+
+        }
+
     </style>
+
 </head>
+
 <body>
 
-    <div class="top-ui">
-        <input type="text" class="search-box" placeholder="🔍 Buscar negocio..." onkeyup="filtrar(this.value)">
+
+
+    <div class="search-box">
+
+        <span>🔍</span>
+
+        <input type="text" id="buscador" placeholder="Buscar en Villa Unión..." onkeyup="filtrar()">
+
     </div>
+
+
 
     <div id="map"></div>
-    <button class="btn-gps" onclick="activarGPS()">🎯</button>
 
-    <div id="bottom-sheet">
-        <span class="close-sheet" onclick="cerrarSheet()">×</span>
-        <div id="sheet-content"></div>
+
+
+    <div class="fab-container">
+
+        <button class="btn-action" onclick="cambiarEstilo()" title="Cambiar Vista">🗺️</button>
+
+        <button class="btn-action btn-location" onclick="centrar()" title="Mi ubicación">🎯</button>
+
     </div>
 
+
+
     <script>
+
+        const estilos = {
+
+            oscuro: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+
+            claro: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+
+        };
+
+
+
         const map = new maplibregl.Map({
+
             container: 'map',
-            style: (new Date().getHours() >= 19 || new Date().getHours() < 7) ? 
-                   'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json' : 
-                   'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+
+            style: estilos.oscuro,
+
             center: [-96.9813, 18.8536], 
-            zoom: 16,
+
+            zoom: 15.5,
+
             pitch: 45,
-            bearing: 165, // ORIENTACIÓN 165°
+
             antialias: true
+
         });
+
+
 
         const lugares = [
-            { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, icono: "🌳", desc: "Área recreativa y canchas.", tel: "2710000000" },
-            { nombre: "Centro de Salud", lon: -96.9808, lat: 18.8497, icono: "🏥", desc: "Atención médica general.", tel: "2711112233" },
-            { nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, icono: "🌮", desc: "Tacos al pastor y tripa.", tel: "2714445566" }
+
+            { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, desc: "Canchas de fútbol y recreación." },
+
+            { nombre: "Centro de Salud", lon: -96.9808, lat: 18.8497, desc: "Servicios médicos básicos." },
+
+            { nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, desc: "Los mejores tacos de la zona." }
+
         ];
 
-        const marcadores = [];
+
+
+        const markers = [];
+
+
 
         lugares.forEach(l => {
+
+            const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
+
+                .setHTML(`<strong style="color:#1a73e8; font-size:16px;">${l.nombre}</strong><p style="margin:5px 0 0; color:#5f6368;">${l.desc}</p>`);
+
+
+
             const el = document.createElement('div');
-            el.className = 'marker-container';
-            el.innerHTML = `<span class="marker-emoji">${l.icono}</span><div class="info-btn">i</div>`;
 
-            // EVENTO DE CLIC DIRECTO AL CONTENEDOR
-            el.onclick = (e) => {
-                e.stopPropagation();
-                abrirSheet(l);
-                map.flyTo({ center: [l.lon, l.lat], zoom: 17.5 });
-            };
+            el.className = 'custom-marker';
 
-            const m = new maplibregl.Marker(el).setLngLat([l.lon, l.lat]).addTo(map);
+            el.style.backgroundColor = '#ea4335';
+
+            el.innerHTML = '<div style="color:white; text-align:center; line-height:30px; font-size:12px;">📍</div>';
+
+
+
+            const m = new maplibregl.Marker(el)
+
+                .setLngLat([l.lon, l.lat])
+
+                .setPopup(popup)
+
+                .addTo(map);
+
+            
+
             m.nombre = l.nombre.toLowerCase();
-            marcadores.push(m);
+
+            markers.push(m);
+
         });
 
-        function abrirSheet(l) {
-            const sheet = document.getElementById('bottom-sheet');
-            const content = document.getElementById('sheet-content');
-            content.innerHTML = `
-                <div class="place-title">${l.nombre}</div>
-                <p style="color: #666;">Villa Unión, Veracruz</p>
-                <p>${l.desc}</p>
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}" target="_blank" class="action-btn">🚗 Cómo llegar</a>
-                <a href="tel:${l.tel}" class="action-btn" style="background:#34a853">📞 Llamar</a>
-            `;
-            sheet.classList.add('active');
-        }
 
-        function cerrarSheet() {
-            document.getElementById('bottom-sheet').classList.remove('active');
-        }
 
-        function filtrar(val) {
-            const t = val.toLowerCase();
-            marcadores.forEach(m => {
-                m.getElement().style.display = m.nombre.includes(t) ? 'flex' : 'none';
+        function filtrar() {
+
+            const val = document.getElementById('buscador').value.toLowerCase();
+
+            markers.forEach(m => {
+
+                m.getElement().style.display = m.nombre.includes(val) ? 'block' : 'none';
+
             });
+
         }
 
-        let userMarker = null;
-        function activarGPS() {
+
+
+        let userMarker = new maplibregl.Marker({ color: '#4285F4' })
+
+            .setLngLat([0,0])
+
+            .addTo(map);
+
+
+
+        function centrar() {
+
             navigator.geolocation.getCurrentPosition(pos => {
+
                 const { longitude, latitude } = pos.coords;
-                if (userMarker) {
-                    userMarker.setLngLat([longitude, latitude]);
-                } else {
-                    const userEl = document.createElement('div');
-                    userEl.className = 'user-dot';
-                    userEl.innerHTML = '👤';
-                    userMarker = new maplibregl.Marker(userEl).setLngLat([longitude, latitude]).addTo(map);
-                }
-                map.flyTo({ center: [longitude, latitude], zoom: 17 });
-            });
+
+                map.flyTo({
+
+                    center: [longitude, latitude],
+
+                    zoom: 17,
+
+                    pitch: 50,
+
+                    essential: true,
+
+                    duration: 2000
+
+                });
+
+                userMarker.setLngLat([longitude, latitude]);
+
+            }, err => alert("Por favor activa el GPS"), { enableHighAccuracy: true });
+
         }
 
-        // Si tocan el mapa, se cierra la pestaña
-        map.on('click', cerrarSheet);
+
+
+        let esOscuro = true;
+
+        function cambiarEstilo() {
+
+            esOscuro = !esOscuro;
+
+            map.setStyle(esOscuro ? estilos.oscuro : estilos.claro);
+
+        }
+
+
+
+        setInterval(() => {
+
+            navigator.geolocation.getCurrentPosition(pos => {
+
+                userMarker.setLngLat([pos.coords.longitude, pos.coords.latitude]);
+
+            }, null, { enableHighAccuracy: true });
+
+        }, 5000);
+
     </script>
+
 </body>
+
 </html>
