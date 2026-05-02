@@ -13,17 +13,20 @@
         * { 
             font-family: 'Roboto', sans-serif; 
             box-sizing: border-box; 
-            /* Evita el resaltado azul al tocar en móviles */
             -webkit-tap-highlight-color: transparent; 
         }
         
-        body { margin: 0; padding: 0; background: #ebebeb; overflow: hidden; }
+        body { margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
         #map { height: 100vh; width: 100vw; }
         
-        /* Barra de búsqueda */
+        /* Interfaz Superior */
+        .top-ui {
+            position: absolute; top: 10px; left: 0; right: 0;
+            z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+
         .search-box {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            z-index: 10; max-width: 450px; margin: 0 auto;
+            width: 90%; max-width: 450px;
             display: flex; align-items: center;
             background: white; padding: 5px 15px;
             border-radius: 28px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
@@ -32,62 +35,110 @@
             flex: 1; border: none; padding: 10px; font-size: 16px; outline: none;
         }
 
-        /* Contenedor de botones */
-        .fab-container {
-            position: absolute; bottom: 30px; right: 15px;
-            display: flex; flex-direction: column; gap: 15px; z-index: 10;
+        /* Filtros Rápidos (Chips) */
+        .filters-container {
+            display: flex; gap: 8px; width: 95%; overflow-x: auto; 
+            padding: 5px 10px; scrollbar-width: none;
+        }
+        .filters-container::-webkit-scrollbar { display: none; }
+
+        .chip {
+            background: white; border: 1px solid #dadce0; padding: 8px 16px;
+            border-radius: 20px; font-size: 14px; white-space: nowrap;
+            cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: all 0.2s; user-select: none;
+        }
+        .chip:active { background: #f1f3f4; transform: scale(0.95); }
+        .chip.active { background: #1a73e8; color: white; border-color: #1a73e8; }
+
+        /* Bottom Sheet (Panel de detalles) */
+        #bottom-sheet {
+            position: fixed; bottom: -100%; left: 0; right: 0;
+            background: white; border-radius: 20px 20px 0 0;
+            z-index: 20; padding: 20px; transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+            max-width: 500px; margin: 0 auto;
+        }
+        #bottom-sheet.open { bottom: 0; }
+        .sheet-handle { 
+            width: 40px; height: 4px; background: #ccc; 
+            border-radius: 2px; margin: 0 auto 15px; 
+        }
+        .sheet-content h2 { margin: 0 0 10px 0; color: #1a73e8; font-size: 22px; }
+        .sheet-content p { color: #5f6368; line-height: 1.5; margin-bottom: 20px; }
+        .close-sheet { 
+            background: #f1f3f4; border: none; padding: 10px; 
+            border-radius: 8px; width: 100%; font-weight: 500; cursor: pointer;
         }
 
-        /* Botones Estilo Google Maps - Sin recuadros azules */
-        .btn-action {
-            background: white; 
-            border: none; 
-            width: 56px; 
-            height: 56px;
-            border-radius: 50%; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            font-size: 24px; 
-            cursor: pointer; 
-            outline: none; /* Elimina el borde azul en PC */
-            user-select: none; /* Evita seleccionar el icono como texto */
-            transition: background 0.2s, transform 0.1s;
+        /* Ventana "Ver más" */
+        #more-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 30; align-items: center; justify-content: center;
         }
-
-        /* Efecto sutil al presionar, sin ser un recuadro */
-        .btn-action:active { 
-            background: #f1f3f4; 
-            transform: scale(0.95); 
+        .modal-content {
+            background: white; width: 85%; max-width: 350px; border-radius: 15px;
+            padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
         }
+        .modal-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
 
-        .btn-location { color: #1a73e8; }
+        /* Botón GPS */
+        .fab-container { position: absolute; bottom: 30px; right: 15px; z-index: 10; }
+        .btn-location {
+            background: white; border: none; width: 56px; height: 56px;
+            border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; cursor: pointer; color: #1a73e8; outline: none;
+        }
 
         .custom-marker {
-            width: 30px; height: 30px;
-            border-radius: 50%; border: 2px solid white;
+            width: 30px; height: 30px; border-radius: 50%; border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;
-        }
-
-        .maplibregl-popup-content {
-            border-radius: 12px !important; padding: 15px !important;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
         }
     </style>
 </head>
 <body>
 
-    <div class="search-box">
-        <span>🔍</span>
-        <input type="text" id="buscador" placeholder="Buscar en Villa Unión..." onkeyup="filtrar()">
+    <div class="top-ui">
+        <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="buscador" placeholder="Buscar en Villa Unión..." onkeyup="filtrarPorTexto()">
+        </div>
+        
+        <div class="filters-container">
+            <div class="chip" onclick="filtrarCategoria('parques', this)">🌳 Parques</div>
+            <div class="chip" onclick="filtrarCategoria('salud', this)">🏥 Salud</div>
+            <div class="chip" onclick="filtrarCategoria('restaurantes', this)">🌮 Restaurantes</div>
+            <div class="chip" onclick="abrirMas()">➕ Ver más</div>
+        </div>
     </div>
 
     <div id="map"></div>
 
+    <!-- Panel de Detalles -->
+    <div id="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-content" id="sheet-data">
+            <!-- Se llena dinámicamente -->
+        </div>
+        <button class="close-sheet" onclick="cerrarSheet()">Cerrar</button>
+    </div>
+
+    <!-- Modal Ver Más -->
+    <div id="more-modal" onclick="cerrarMas(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin-top:0">Otras categorías</h3>
+            <div class="modal-list">
+                <div class="chip" onclick="filtrarCategoria('abarrotes', this)">🛒 Abarrotes</div>
+                <div class="chip" onclick="filtrarCategoria('cafeterias', this)">☕ Cafeterías</div>
+                <div class="chip" onclick="filtrarCategoria('mascotas', this)">🐾 Mascotas</div>
+                <div class="chip" onclick="filtrarCategoria('papelerias', this)">📄 Papelerías</div>
+            </div>
+        </div>
+    </div>
+
     <div class="fab-container">
-        <button class="btn-action" onclick="cambiarEstilo()" title="Cambiar Vista">🗺️</button>
-        <button class="btn-action btn-location" onclick="centrar()" title="Mi ubicación">🎯</button>
+        <button class="btn-location" onclick="centrar()">🎯</button>
     </div>
 
     <script>
@@ -96,27 +147,29 @@
             claro: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
         };
 
+        // Lógica de Modo Nocturno Automático (7PM - 7AM)
+        const horaActual = new Date().getHours();
+        const estiloAutomatico = (horaActual >= 19 || horaActual < 7) ? estilos.oscuro : estilos.claro;
+
         const map = new maplibregl.Map({
             container: 'map',
-            style: estilos.oscuro,
+            style: estiloAutomatico,
             center: [-96.9813, 18.8536], 
             zoom: 15.5,
-            pitch: 45,
+            pitch: 50,
+            bearing: 180, // Orientación solicitada (Entrada del pueblo)
             antialias: true
         });
 
         const lugares = [
-            { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, desc: "Canchas de fútbol y recreación." },
-            { nombre: "Centro de Salud", lon: -96.9808, lat: 18.8497, desc: "Servicios médicos básicos." },
-            { nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, desc: "Los mejores tacos de la zona." }
+            { nombre: "Campo Deportivo", lon: -96.9822, lat: 18.8497, desc: "Canchas de fútbol de pasto natural y recreación familiar.", cat: "parques" },
+            { nombre: "Centro de Salud", lon: -96.9808, lat: 18.8497, desc: "Unidad médica de primer nivel con atención preventiva.", cat: "salud" },
+            { nombre: "Taquitos Villa Unión", lon: -96.9831, lat: 18.8570, desc: "Especialidad en tacos y antojitos tradicionales.", cat: "restaurantes" }
         ];
 
         const markers = [];
 
         lugares.forEach(l => {
-            const popup = new maplibregl.Popup({ offset: 25, closeButton: false })
-                .setHTML(`<strong style="color:#1a73e8; font-size:16px;">${l.nombre}</strong><p style="margin:5px 0 0; color:#5f6368;">${l.desc}</p>`);
-
             const el = document.createElement('div');
             el.className = 'custom-marker';
             el.style.backgroundColor = '#ea4335';
@@ -124,42 +177,72 @@
 
             const m = new maplibregl.Marker(el)
                 .setLngLat([l.lon, l.lat])
-                .setPopup(popup)
                 .addTo(map);
             
+            // Evento para abrir Bottom Sheet en vez de Popup
+            el.addEventListener('click', () => {
+                abrirSheet(l);
+                map.flyTo({ center: [l.lon, l.lat], zoom: 17 });
+            });
+
             m.nombre = l.nombre.toLowerCase();
+            m.categoria = l.cat;
             markers.push(m);
         });
 
-        function filtrar() {
+        // Funciones de Panel de Detalles
+        function abrirSheet(l) {
+            document.getElementById('sheet-data').innerHTML = `
+                <h2>${l.nombre}</h2>
+                <p>${l.desc}</p>
+                <div style="margin-bottom:15px; font-size:14px; color:#1a73e8;">Categoría: ${l.cat.charAt(0).toUpperCase() + l.cat.slice(1)}</div>
+            `;
+            document.getElementById('bottom-sheet').classList.add('open');
+        }
+
+        function cerrarSheet() {
+            document.getElementById('bottom-sheet').classList.remove('open');
+        }
+
+        // Funciones de Filtros
+        function filtrarCategoria(cat, elemento) {
+            const yaActivo = elemento.classList.contains('active');
+            
+            // Limpiar otros chips
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            
+            if (yaActivo) {
+                markers.forEach(m => m.getElement().style.display = 'block');
+            } else {
+                elemento.classList.add('active');
+                markers.forEach(m => {
+                    m.getElement().style.display = (m.categoria === cat) ? 'block' : 'none';
+                });
+            }
+            cerrarMasDirecto();
+        }
+
+        function filtrarPorTexto() {
             const val = document.getElementById('buscador').value.toLowerCase();
             markers.forEach(m => {
                 m.getElement().style.display = m.nombre.includes(val) ? 'block' : 'none';
             });
         }
 
-        let userMarker = new maplibregl.Marker({ color: '#4285F4' })
-            .setLngLat([0,0])
-            .addTo(map);
+        // Modal "Ver Más"
+        function abrirMas() { document.getElementById('more-modal').style.display = 'flex'; }
+        function cerrarMas(e) { document.getElementById('more-modal').style.display = 'none'; }
+        function cerrarMasDirecto() { document.getElementById('more-modal').style.display = 'none'; }
+
+        // GPS
+        let userMarker = new maplibregl.Marker({ color: '#4285F4' }).setLngLat([0,0]).addTo(map);
 
         function centrar() {
             navigator.geolocation.getCurrentPosition(pos => {
                 const { longitude, latitude } = pos.coords;
-                map.flyTo({
-                    center: [longitude, latitude],
-                    zoom: 17,
-                    pitch: 50,
-                    essential: true,
-                    duration: 2000
-                });
+                map.flyTo({ center: [longitude, latitude], zoom: 17, duration: 2000 });
                 userMarker.setLngLat([longitude, latitude]);
-            }, err => alert("Por favor activa el GPS"), { enableHighAccuracy: true });
-        }
-
-        let esOscuro = true;
-        function cambiarEstilo() {
-            esOscuro = !esOscuro;
-            map.setStyle(esOscuro ? estilos.oscuro : estilos.claro);
+            }, null, { enableHighAccuracy: true });
         }
 
         setInterval(() => {
@@ -167,6 +250,9 @@
                 userMarker.setLngLat([pos.coords.longitude, pos.coords.latitude]);
             }, null, { enableHighAccuracy: true });
         }, 5000);
+
+        // Cerrar sheet al tocar el mapa
+        map.on('click', () => cerrarSheet());
     </script>
 </body>
 </html>
